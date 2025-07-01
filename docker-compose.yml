@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: reminder_bot
+      POSTGRES_USER: bot_user
+      POSTGRES_PASSWORD: bot_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bot_user -d reminder_bot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  reminder-bot:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://bot_user:bot_password@postgres:5432/reminder_bot
+    volumes:
+      - ./logs:/app/logs
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
